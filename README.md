@@ -156,8 +156,8 @@ The UI sends events to Inngest, and the backend functions perform the work and r
 ![Home Page](https://github.com/ayushdongre01/DocMind/blob/main/images/1.png)
 ![Question 1](https://github.com/ayushdongre01/DocMind/blob/main/images/2.png)
 ![Answer 1](https://github.com/ayushdongre01/DocMind/blob/main/images/3.png)
-![Question 2](https://github.com/ayushdongre01/DocMind/blob/main/images/1.png)
-![Answer 2](https://github.com/ayushdongre01/DocMind/blob/main/images/2.png)
+![Question 2](https://github.com/ayushdongre01/DocMind/blob/main/images/4.png)
+![Answer 2](https://github.com/ayushdongre01/DocMind/blob/main/images/5.png)
 
 ## Troubleshooting
 
