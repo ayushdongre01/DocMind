@@ -153,17 +153,11 @@ The UI sends events to Inngest, and the backend functions perform the work and r
 
 ## Screenshots
 
-Add product screenshots to `docs/screenshots/` and reference them here.
-
-Suggested screenshots:
-
-| Screen | Description | Suggested file |
-| --- | --- | --- |
-| Main upload view | Shows the document upload panel and app layout | `docs/screenshots/upload-view.png` |
-| Answer view | Shows a successful question-and-answer result | `docs/screenshots/answer-view.png` |
-| Sources panel | Shows retrieved source references in the expander | `docs/screenshots/sources-view.png` |
-
-If you add images, use the table above or embed them directly in this section.
+![Home Page](https://github.com/ayushdongre01/DocMind/blob/main/images/1.png)
+![Question 1](https://github.com/ayushdongre01/DocMind/blob/main/images/2.png)
+![Answer 1](https://github.com/ayushdongre01/DocMind/blob/main/images/3.png)
+![Question 2](https://github.com/ayushdongre01/DocMind/blob/main/images/1.png)
+![Answer 2](https://github.com/ayushdongre01/DocMind/blob/main/images/2.png)
 
 ## Troubleshooting
 
