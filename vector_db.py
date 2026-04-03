@@ -26,7 +26,7 @@ class QdrantStorage:
             with_payload=True
         )
         contexts = []
-        sources = set()
+        sources = []
 
         points = results.points
 
@@ -34,8 +34,9 @@ class QdrantStorage:
             payload = r.payload or {}
             text = payload.get("text", "")
             source = payload.get("source", "")
+
             if text:
                 contexts.append(text)
-                sources.add(source)
+                sources.append(source)
 
-        return {"contexts": contexts, "sources": list(sources)}
+        return {"contexts": contexts, "sources": sources}
