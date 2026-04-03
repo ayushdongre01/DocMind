@@ -1,16 +1,16 @@
 # DocMind
 
-DocMind is a local retrieval-augmented generation (RAG) app for asking questions about PDF documents. You upload a document in the Streamlit UI, the app chunks and embeds the text, stores vectors in Qdrant, and then uses an LLM to answer questions with supporting context.
+DocMind is a PDF question-answering app built with Retrieval-Augmented Generation (RAG). It ingests PDF text, creates local embeddings, stores vectors in Qdrant, and generates grounded answers with source references.
 
-## What It Does
+## What Changed In Architecture
 
-- Upload PDF files and persist them in a local `uploads/` folder.
-- Extract text from PDFs with `llama-index` readers.
-- Split documents into overlapping text chunks for retrieval.
-- Generate embeddings with a local SentenceTransformer model.
-- Store and search chunks in Qdrant.
-- Send questions through an Inngest-based workflow and generate answers with the OpenAI-compatible client configured for Azure GitHub Models.
-- Show sources for retrieved context in the UI.
+The current app flow is API-first:
+
+- Streamlit frontend calls FastAPI endpoints directly.
+- FastAPI handles ingestion and querying via `/ingest` and `/query`.
+- Qdrant stores and retrieves dense vectors.
+- BM25 sparse scoring is used alongside dense retrieval to improve keyword matching during query.
+- Inngest functions still exist in backend code for event-driven workflows, but the active UI flow uses direct HTTP endpoints.
 
 ## 🌐 Live Demo
 
@@ -19,142 +19,119 @@ DocMind is a local retrieval-augmented generation (RAG) app for asking questions
 
 ## Architecture
 
-1. The Streamlit app accepts a PDF upload.
-2. The PDF is saved locally under `uploads/`.
-3. An Inngest event named `rag/ingest_pdf` triggers ingestion.
-4. The backend loads the PDF, splits it into chunks, embeds the chunks, and upserts them into Qdrant.
-5. When you ask a question, the Streamlit app sends a `rag/query_pdf_ai` event.
-6. The backend embeds the question, searches Qdrant for the top matches, and sends the retrieved context to the LLM.
-7. The answer and source references are returned to the UI.
+1. User uploads a PDF in Streamlit.
+2. Frontend sends file to backend `/ingest`.
+3. Backend extracts text with `llama-index` PDF reader.
+4. Text is split into chunks (`chunk_size=700`, `chunk_overlap=100`).
+5. Chunks are embedded with `all-MiniLM-L6-v2` (384-dim).
+6. Vectors and payloads are upserted into Qdrant collection `docs`.
+7. User asks a question in Streamlit.
+8. Frontend sends question to backend `/query` with `top_k` and document source filter.
+9. Backend performs dense retrieval (Qdrant) + sparse retrieval (BM25), merges context, and calls LLM.
+10. Backend returns answer, source files, and context count to UI.
 
 ## Tech Stack
 
-- Python 3.13+
-- FastAPI
+- Python    
 - Streamlit
-- Inngest
+- FastAPI
 - Qdrant
-- sentence-transformers
-- llama-index
-- OpenAI-compatible client configured for Azure GitHub Models
+- sentence-transformers (`all-MiniLM-L6-v2`)
+- llama-index readers
+- rank-bm25
+- OpenAI Python SDK (Azure GitHub Models compatible endpoint)
+- Inngest (available in backend for event-driven flow)
 
-## Repository Layout
+## Repository Structure
 
 ```text
 DocMind/
-├── main.py                # FastAPI app and Inngest functions
-├── streamlit_app.py       # Document upload and chat UI
-├── data_loader.py         # PDF loading, chunking, and embedding helpers
-├── vector_db.py           # Qdrant wrapper for insert/search
-├── custom_types.py        # Pydantic response models
-├── models/
-│   └── all-MiniLM-L6-v2/  # Local embedding model files
-├── uploads/               # Uploaded PDFs are saved here
-├── qdrant_storage/        # Local Qdrant data directory
-├── pyproject.toml
+├── main.py                 # FastAPI routes + Inngest functions + LLM calls
+├── streamlit_app.py        # Streamlit frontend (upload + QA)
+├── data_loader.py          # PDF load/chunk + embedding + BM25 index build
+├── vector_db.py            # Qdrant storage wrapper
+├── custom_types.py         # Pydantic data models
+├── uploads/                # Uploaded PDFs
 ├── requirements.txt
+├── pyproject.toml
 └── README.md
 ```
 
-## Prerequisites
+## API Endpoints
 
-- Python 3.13 or newer
-- Qdrant running locally on port `6333`
-- Access to an OpenAI-compatible model endpoint through `OPENAI_API_KEY`
-- The local embedding model available at `models/all-MiniLM-L6-v2`
+### `POST /ingest`
 
-## Setup
+- Input: multipart file (`pdf`)
+- Action: chunk + embed + upsert to Qdrant
+- Output: ingested chunk count
 
-### 1. Install dependencies
+### `POST /query`
+
+- Input JSON:
+
+```json
+{
+	"question": "What is the document about?",
+	"top_k": 5,
+	"source": "my_file.pdf"
+}
+```
+
+- Action: retrieve context (dense + sparse), generate LLM answer
+- Output: answer text, sources, number of contexts used
+
+## Local Setup
+
+## 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-If you prefer to use the project metadata, you can also install from `pyproject.toml` with your preferred Python environment manager.
-
-### 2. Start Qdrant
-
-If Qdrant is not already running, start it locally:
+## 2. Run Qdrant locally
 
 ```bash
 docker run -d --name qdrant -p 6333:6333 qdrant/qdrant
 ```
 
-### 3. Configure environment variables
+## 3. Configure environment
 
-Create a `.env` file in the project root with the values your setup needs:
+Create `.env` in project root:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
+QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=
 INNGEST_API_BASE=http://127.0.0.1:8288/v1
 ```
 
 Notes:
 
-- `OPENAI_API_KEY` is used by the OpenAI-compatible client in `main.py`.
-- `INNGEST_API_BASE` is optional, but it must point to the Inngest API server if you are not using the default local address.
+- `OPENAI_API_KEY` is required for answer generation.
+- `QDRANT_URL` defaults to `http://localhost:6333` if unset.
+- `INNGEST_API_BASE` is only needed if using Inngest event flow.
 
-### 4. Verify the local embedding model
-
-The app loads the embedding model from `models/all-MiniLM-L6-v2`. If you move the project or change the folder name, update the model path in `data_loader.py` so it points to the correct location.
-
-## Running the App
-
-Open two terminals.
-
-### Backend
-
-Run the FastAPI app that serves the Inngest functions:
+## 4. Run backend
 
 ```bash
 uvicorn main:app --reload
 ```
 
-### Frontend
-
-Run the Streamlit UI:
+## 5. Run frontend
 
 ```bash
 streamlit run streamlit_app.py
 ```
 
-## How To Use
+## Configuration Notes
 
-1. Open the Streamlit app in your browser.
-2. Upload a PDF document.
-3. Wait for ingestion to complete.
-4. Ask a question about the document.
-5. Review the generated answer and expand the sources list if references are available.
-
-## Event Flow
-
-The current implementation uses Inngest events rather than direct upload/chat HTTP endpoints.
-
-- `rag/ingest_pdf` handles PDF ingestion.
-- `rag/query_pdf_ai` handles question answering.
-
-The UI sends events to Inngest, and the backend functions perform the work and return the final result.
-
-## Configuration Details
-
-### Embeddings
-
-- Chunk size: `700`
-- Chunk overlap: `100`
+- Embedding model in code: `SentenceTransformer("all-MiniLM-L6-v2")`
 - Embedding dimension: `384`
-- Embedding model: `all-MiniLM-L6-v2`
-
-### Retrieval
-
 - Qdrant collection: `docs`
-- Distance metric: cosine similarity
-- Default `top_k`: `5`
+- Query default `top_k`: `5`
+- LLM model: `gpt-4o-mini`
 
-### LLM
-
-- The response generation step uses an OpenAI-compatible client.
-- The code currently targets `gpt-4o-mini` through the Azure GitHub Models base URL configured in `main.py`.
+If you use a local model folder instead of hub download, update model path in `data_loader.py` accordingly.
 
 ## Screenshots
 
@@ -166,17 +143,16 @@ The UI sends events to Inngest, and the backend functions perform the work and r
 
 ## Troubleshooting
 
-- If uploads fail, confirm Qdrant is running on `http://localhost:6333`.
-- If embeddings fail to load, verify that the local model folder exists and the path in `data_loader.py` is correct.
-- If the UI cannot fetch run results, check the `INNGEST_API_BASE` value.
-- If responses fail, confirm that `OPENAI_API_KEY` is set and valid for the configured endpoint.
-- If PDFs are not returning useful answers, try increasing `top_k` or asking more specific questions.
+- `401/403` from model endpoint: verify `OPENAI_API_KEY`.
+- No search results: confirm Qdrant is running and collection has ingested points.
+- Slow responses: reduce `top_k`.
+- Wrong source filtering: ensure query `source` matches uploaded filename.
+- Embedding load errors: check model availability for `all-MiniLM-L6-v2`.
 
-## Future Improvements
+## Roadmap
 
-- Streaming responses
-- Chat history persistence
-- Multiple document collections
-- Authentication
-- Better upload progress feedback
+- Streaming token responses in UI
+- Multi-document session context
+- Better ingestion progress tracking
+- Per-user document isolation
 
