@@ -412,7 +412,6 @@ label,
 
 # ── Backend helpers (unchanged) ─────────────────────────────────────────────
 
-@st.cache_resource
 def get_inngest_client() -> inngest.Inngest:
     return inngest.Inngest(
         app_id="rag_app",
