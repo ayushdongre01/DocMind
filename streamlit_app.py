@@ -578,7 +578,7 @@ with col_left:
     if uploaded is not None:
         with st.spinner("Ingesting document…"):
             path = save_uploaded_pdf(uploaded)
-            asyncio.run(send_rag_ingest_event(path))
+            asyncio.get_event_loop().run_until_complete(send_rag_ingest_event(path))
             time.sleep(0.3)
 
         st.markdown(f"""
