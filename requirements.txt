@@ -1,3 +1,5 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 fastapi
 inngest
 llama-index-core
@@ -7,5 +9,6 @@ qdrant-client
 uvicorn
 streamlit
 openai
-sentence-transformers
+sentence-transformers==2.7.0
+torch==2.2.2+cpu
 rank-bm25
