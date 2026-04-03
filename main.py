@@ -23,20 +23,60 @@ class QueryRequest(BaseModel):
     question: str
     top_k: int = 5
 
-
 @app.post("/query")
 async def query(req: QueryRequest):
-    result = await inngest_client.send(
-        inngest.Event(
-            name="rag/query_pdf_ai",
-            data={
-                "question": req.question,
-                "top_k": req.top_k,
-            },
+
+    question = req.question
+    top_k = req.top_k
+
+    # Dense search
+    query_vec = embed_texts([question])[0]
+    store = QdrantStorage()
+    dense_results = store.search(query_vec, top_k)
+
+    dense_contexts = dense_results["contexts"]
+
+    # Sparse search
+    sparse_contexts = []
+    if bm25_index:
+        scores = bm25_index.get_scores(question.lower().split())
+        ranked = sorted(
+            zip(chunk_corpus, scores),
+            key=lambda x: x[1],
+            reverse=True
         )
+        sparse_contexts = [c for c, _ in ranked[:top_k]]
+
+    combined = list(dict.fromkeys(dense_contexts + sparse_contexts))
+
+    context_block = "\n\n".join(f"- {c}" for c in combined[:top_k])
+
+    user_content = (
+        "Use the following context to answer the question.\n\n"
+        f"Context:\n{context_block}\n\n"
+        f"Question: {question}\n"
+        "Answer concisely using ONLY the context above."
     )
 
-    return {"event_id": result[0]["id"]}
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You answer questions using only the provided context."},
+            {"role": "user", "content": user_content}
+        ],
+        max_tokens=512,
+        temperature=0.2
+    )
+
+    answer = response.choices[0].message.content.strip()
+
+    return {
+        "answer": answer,
+        "sources": dense_results["sources"],
+        "num_contexts": len(combined)
+    }
+
+
 # ✅ GitHub Models Client (IMPORTANT)
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
