@@ -14,8 +14,7 @@ from data_loader import load_and_chunk_pdf, embed_texts
 from vector_db import QdrantStorage
 from custom_types import RAGSearchResult, RAGUpsertResult, RAGChunkAndSrc
 
-from data_loader import bm25_index, chunk_corpus
-
+import data_loader
 load_dotenv()
 
 from pydantic import BaseModel
@@ -40,10 +39,10 @@ async def query(req: QueryRequest):
 
     # Sparse search (BM25)
     sparse_contexts = []
-    if bm25_index:
-        scores = bm25_index.get_scores(question.lower().split())
+    if data_loader.bm25_index:
+        scores = data_loader.bm25_index.get_scores(question.lower().split())
         ranked = sorted(
-            zip(chunk_corpus, scores),
+            zip(data_loader.chunk_corpus, scores),
             key=lambda x: x[1],
             reverse=True
         )
