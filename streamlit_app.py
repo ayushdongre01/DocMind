@@ -455,47 +455,12 @@ def _inngest_api_base() -> str:
     return os.getenv("INNGEST_API_BASE")
 
 
-def fetch_runs(event_id: str) -> list[dict]:
-    url = f"{_inngest_api_base()}/v1/events/{event_id}/runs"
-
-    resp = requests.get(
-        url,
-        headers={
-            "Authorization": f"Bearer {os.getenv('INNGEST_EVENT_KEY')}",
-            "Content-Type": "application/json",
-        },
-    )
-
-    if resp.status_code != 200:
-        st.write("DEBUG STATUS:", resp.status_code)
-        st.write("DEBUG RESPONSE:", resp.text)
-
-    resp.raise_for_status()
-    return resp.json().get("data", [])
 
 def run_async(coro):
     import asyncio
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     return loop.run_until_complete(coro)
-
-def wait_for_run_output(event_id: str, timeout_s: float = 1200.0, poll_interval_s: float = 0.5) -> dict:
-    start = time.time()
-    last_status = None
-    while True:
-        runs = fetch_runs(event_id)
-        if runs:
-            run = runs[0]
-            status = run.get("status")
-            last_status = status or last_status
-            if status in ("Completed", "Succeeded", "Success", "Finished"):
-                return run.get("output") or {}
-            if status in ("Failed", "Cancelled"):
-                raise RuntimeError(f"Function run {status}")
-        if time.time() - start > timeout_s:
-            raise TimeoutError(f"Timed out waiting for run output (last status: {last_status})")
-        time.sleep(poll_interval_s)
-
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 
@@ -630,8 +595,15 @@ with col_right:
     # ── Answer section ────────────────────────────────────────────────────────
     if submitted and question.strip():
         with st.spinner("Generating answer…"):
-            event_id = run_async(send_rag_query_event(question.strip(), int(top_k)))
-            output = wait_for_run_output(event_id)
+            resp = requests.post(
+                "https://docmind-production-67a9.up.railway.app/query",
+                json={
+                    "question": question.strip(),
+                    "top_k": int(top_k),
+                },
+            )
+
+            output = resp.json()
             answer = output.get("answer", "")
             sources = output.get("sources", [])
 
