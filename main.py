@@ -233,7 +233,6 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
 # =========================
 # 🚀 FASTAPI APP
 # =========================
-app = FastAPI()
 
 inngest.fast_api.serve(
     app,
