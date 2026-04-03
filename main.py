@@ -105,7 +105,7 @@ async def query(req: QueryRequest):
 
     return {
         "answer": answer,
-        "sources": dense_results["sources"],
+        "sources": list(set(sources)),
         "num_contexts": len(combined)
     }
 
