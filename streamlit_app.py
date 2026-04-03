@@ -1,6 +1,7 @@
 import asyncio
 from pathlib import Path
 import time
+import base64
 
 import streamlit as st
 import inngest
@@ -430,11 +431,13 @@ def save_uploaded_pdf(file) -> Path:
 async def send_rag_ingest_event(file) -> None:
     client = get_inngest_client()
 
+    pdf_base64 = base64.b64encode(file.getvalue()).decode()
+
     await client.send(
         inngest.Event(
             name="rag/ingest_pdf",
             data={
-                "pdf_bytes": file.getvalue(),
+                "pdf_bytes": pdf_base64,
                 "source_id": file.name,
             },
         )
