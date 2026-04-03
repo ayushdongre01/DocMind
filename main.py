@@ -69,8 +69,6 @@ async def query(req: QueryRequest):
 
     dense_contexts = dense_contexts[:top_k]
 
-    dense_contexts = dense_results["contexts"]
-
     # Sparse search (BM25)
     sparse_contexts = []
     if data_loader.bm25_index:
