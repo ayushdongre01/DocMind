@@ -16,6 +16,27 @@ from data_loader import bm25_index, chunk_corpus
 
 load_dotenv()
 
+from pydantic import BaseModel
+
+app = FastAPI()
+class QueryRequest(BaseModel):
+    question: str
+    top_k: int = 5
+
+
+@app.post("/query")
+async def query(req: QueryRequest):
+    result = await inngest_client.send(
+        inngest.Event(
+            name="rag/query_pdf_ai",
+            data={
+                "question": req.question,
+                "top_k": req.top_k,
+            },
+        )
+    )
+
+    return {"event_id": result[0]["id"]}
 # ✅ GitHub Models Client (IMPORTANT)
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
