@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import uuid
 import os
 import datetime
+import base64
+import tempfile
 from openai import OpenAI
 from io import BytesIO
 from data_loader import load_and_chunk_pdf, embed_texts
@@ -109,11 +111,16 @@ inngest_client = inngest.Inngest(
 async def rag_ingest_pdf(ctx: inngest.Context):
 
     def _load(ctx: inngest.Context) -> RAGChunkAndSrc:
-        pdf_bytes = ctx.event.data["pdf_bytes"]
+        pdf_base64 = ctx.event.data["pdf_bytes"]
         source_id = ctx.event.data["source_id"]
 
-        pdf_stream = BytesIO(pdf_bytes)
-        chunks = load_and_chunk_pdf(pdf_stream)
+        pdf_bytes = base64.b64decode(pdf_base64)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(pdf_bytes)
+            tmp_path = tmp.name
+
+        chunks = load_and_chunk_pdf(tmp_path)
 
         return RAGChunkAndSrc(chunks=chunks, source_id=source_id)
 
