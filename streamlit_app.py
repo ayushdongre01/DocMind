@@ -620,6 +620,7 @@ with col_right:
                 json={
                     "question": question.strip(),
                     "top_k": int(top_k),
+                    "source": uploaded.name
                 },
             )
 

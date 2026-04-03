@@ -23,6 +23,7 @@ app = FastAPI()
 class QueryRequest(BaseModel):
     question: str
     top_k: int = 5
+    source: str
 
 from fastapi import UploadFile, File
 
@@ -56,7 +57,17 @@ async def query(req: QueryRequest):
     # Dense search
     query_vec = embed_texts([question])[0]
     store = QdrantStorage()
-    dense_results = store.search(query_vec, top_k)
+    dense_results = store.search(query_vec, top_k * 5)
+
+    dense_contexts = []
+    sources = []
+
+    for ctx, src in zip(dense_results["contexts"], dense_results["sources"]):
+        if src == req.source:
+            dense_contexts.append(ctx)
+            sources.append(src)
+
+    dense_contexts = dense_contexts[:top_k]
 
     dense_contexts = dense_results["contexts"]
 
