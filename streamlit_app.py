@@ -9,6 +9,9 @@ import os
 import requests
 
 load_dotenv()
+if not os.getenv("INNGEST_API_BASE"):
+    raise RuntimeError("INNGEST_API_BASE not set")
+
 
 st.set_page_config(
     page_title="DocMind",
@@ -411,8 +414,11 @@ label,
 
 @st.cache_resource
 def get_inngest_client() -> inngest.Inngest:
-    #return inngest.Inngest(app_id="rag_app", is_production=False)
-    return inngest.Inngest(app_id="rag_app", is_production=True)
+    return inngest.Inngest(
+        app_id="rag_app",
+        is_production=True,
+        api_base=os.getenv("INNGEST_API_BASE"),
+    )
 
 
 def save_uploaded_pdf(file) -> Path:
