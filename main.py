@@ -36,7 +36,7 @@ async def query(req: QueryRequest):
 
     dense_contexts = dense_results["contexts"]
 
-    # Sparse search
+    # Sparse search (BM25)
     sparse_contexts = []
     if bm25_index:
         scores = bm25_index.get_scores(question.lower().split())
