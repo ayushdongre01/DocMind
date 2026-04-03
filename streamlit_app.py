@@ -466,9 +466,7 @@ def run_async(coro):
     import asyncio
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(coro)
-    loop.close()
-    return result
+    return loop.run_until_complete(coro)
 
 def wait_for_run_output(event_id: str, timeout_s: float = 1200.0, poll_interval_s: float = 0.5) -> dict:
     start = time.time()
