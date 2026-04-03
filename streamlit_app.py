@@ -462,6 +462,13 @@ def fetch_runs(event_id: str) -> list[dict]:
     resp.raise_for_status()
     return resp.json().get("data", [])
 
+def run_async(coro):
+    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    result = loop.run_until_complete(coro)
+    loop.close()
+    return result
 
 def wait_for_run_output(event_id: str, timeout_s: float = 1200.0, poll_interval_s: float = 0.5) -> dict:
     start = time.time()
@@ -578,7 +585,7 @@ with col_left:
     if uploaded is not None:
         with st.spinner("Ingesting document…"):
             path = save_uploaded_pdf(uploaded)
-            asyncio.get_event_loop().run_until_complete(send_rag_ingest_event(path))
+            run_async(send_rag_ingest_event(path))
             time.sleep(0.3)
 
         st.markdown(f"""
@@ -614,9 +621,7 @@ with col_right:
     # ── Answer section ────────────────────────────────────────────────────────
     if submitted and question.strip():
         with st.spinner("Generating answer…"):
-            event_id = asyncio.get_event_loop().run_until_complete(
-                            send_rag_query_event(question.strip(), int(top_k))
-                        )
+            event_id = run_async(send_rag_query_event(question.strip(), int(top_k)))
             output = wait_for_run_output(event_id)
             answer = output.get("answer", "")
             sources = output.get("sources", [])
