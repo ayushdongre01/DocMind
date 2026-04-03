@@ -12,6 +12,8 @@ from data_loader import load_and_chunk_pdf, embed_texts
 from vector_db import QdrantStorage
 from custom_types import RAGSearchResult, RAGUpsertResult, RAGChunkAndSrc
 
+from data_loader import bm25_index, chunk_corpus
+
 load_dotenv()
 
 # ✅ GitHub Models Client (IMPORTANT)
@@ -95,13 +97,30 @@ async def rag_ingest_pdf(ctx: inngest.Context):
 async def rag_query_pdf_ai(ctx: inngest.Context):
 
     def _search(question: str, top_k: int = 5) -> RAGSearchResult:
+        # Dense search
         query_vec = embed_texts([question])[0]
         store = QdrantStorage()
-        found = store.search(query_vec, top_k)
+        dense_results = store.search(query_vec, top_k)
+
+        dense_contexts = dense_results["contexts"]
+
+        # Sparse search (BM25)
+        sparse_contexts = []
+        if bm25_index:
+            scores = bm25_index.get_scores(question.lower().split())
+            ranked = sorted(
+                zip(chunk_corpus, scores),
+                key=lambda x: x[1],
+                reverse=True
+            )
+            sparse_contexts = [c for c, _ in ranked[:top_k]]
+
+        # Merge results
+        combined = list(dict.fromkeys(dense_contexts + sparse_contexts))
 
         return RAGSearchResult(
-            contexts=found["contexts"],
-            sources=found["sources"]
+            contexts=combined[:top_k],
+            sources=dense_results["sources"]
         )
 
     question = ctx.event.data["question"]

@@ -8,3 +8,4 @@ uvicorn
 streamlit
 openai
 sentence-transformers
+rank-bm25
