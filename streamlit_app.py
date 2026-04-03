@@ -13,7 +13,11 @@ load_dotenv()
 if not os.getenv("INNGEST_API_BASE"):
     raise RuntimeError("INNGEST_API_BASE not set")
 
+if "pdf_ingested" not in st.session_state:
+    st.session_state.pdf_ingested = False
 
+if "last_uploaded_file" not in st.session_state:
+    st.session_state.last_uploaded_file = None
 st.set_page_config(
     page_title="DocMind",
     page_icon="🧠",
@@ -557,16 +561,23 @@ with col_left:
         accept_multiple_files=False,
         label_visibility="visible",
     )
-
+    if uploaded:
+        if st.session_state.last_uploaded_file != uploaded.name:
+            st.session_state.pdf_ingested = False
+            st.session_state.last_uploaded_file = uploaded.name
     st.markdown('<div class="upload-hint">Supports PDF · Max 200 MB</div>', unsafe_allow_html=True)
 
     if uploaded is not None:
         with st.spinner("Ingesting document…"):
             path = save_uploaded_pdf(uploaded)
-            requests.post(
-                "https://docmind-production-67a9.up.railway.app/ingest",
-                files={"file": uploaded.getvalue()}
-            )
+            if uploaded and not st.session_state.pdf_ingested:
+                requests.post(
+                    "https://docmind-production-67a9.up.railway.app/ingest",
+                    files={"file": (uploaded.name, uploaded.getvalue(), "application/pdf")}
+                )
+
+                st.session_state.pdf_ingested = True
+                st.success("PDF ingested successfully!")
             time.sleep(6)
 
         st.markdown(f"""
