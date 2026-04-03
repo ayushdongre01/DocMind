@@ -12,3 +12,4 @@ openai
 sentence-transformers==2.7.0
 torch==2.7.1+cpu
 rank-bm25
+python-multipart
