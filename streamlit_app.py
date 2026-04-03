@@ -461,9 +461,14 @@ def fetch_runs(event_id: str) -> list[dict]:
     resp = requests.get(
         url,
         headers={
-            "Authorization": f"Bearer {os.getenv('INNGEST_EVENT_KEY')}"
+            "Authorization": f"Bearer {os.getenv('INNGEST_EVENT_KEY')}",
+            "Content-Type": "application/json",
         },
     )
+
+    if resp.status_code != 200:
+        st.write("DEBUG STATUS:", resp.status_code)
+        st.write("DEBUG RESPONSE:", resp.text)
 
     resp.raise_for_status()
     return resp.json().get("data", [])
