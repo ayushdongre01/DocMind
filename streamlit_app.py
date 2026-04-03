@@ -568,17 +568,19 @@ with col_left:
     st.markdown('<div class="upload-hint">Supports PDF · Max 200 MB</div>', unsafe_allow_html=True)
 
     if uploaded is not None:
-        with st.spinner("Ingesting document…"):
-            path = save_uploaded_pdf(uploaded)
-            if uploaded and not st.session_state.pdf_ingested:
+        path = save_uploaded_pdf(uploaded)
+
+        if not st.session_state.pdf_ingested:
+
+            with st.spinner("Ingesting document…"):
                 requests.post(
                     "https://docmind-production-67a9.up.railway.app/ingest",
                     files={"file": (uploaded.name, uploaded.getvalue(), "application/pdf")}
                 )
 
                 st.session_state.pdf_ingested = True
-                st.success("PDF ingested successfully!")
-            time.sleep(6)
+
+            st.success("PDF ingested successfully!")
 
         st.markdown(f"""
         <div class="pill-success">✓ &nbsp;Ingested: <strong>{path.name}</strong></div>
