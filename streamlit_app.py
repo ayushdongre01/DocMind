@@ -564,7 +564,7 @@ with col_left:
         with st.spinner("Ingesting document…"):
             path = save_uploaded_pdf(uploaded)
             run_async(send_rag_ingest_event(uploaded))
-            time.sleep(0.3)
+            time.sleep(6)
 
         st.markdown(f"""
         <div class="pill-success">✓ &nbsp;Ingested: <strong>{path.name}</strong></div>
