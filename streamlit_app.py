@@ -560,7 +560,7 @@ with col_left:
     if uploaded is not None:
         with st.spinner("Ingesting document…"):
             path = save_uploaded_pdf(uploaded)
-            run_async(send_rag_ingest_event(path))
+            run_async(send_rag_ingest_event(uploaded))
             time.sleep(0.3)
 
         st.markdown(f"""
@@ -604,9 +604,17 @@ with col_right:
                 },
             )
 
+            if resp.status_code != 200:
+                st.error(f"Backend error: {resp.text}")
+                st.stop()
+
             output = resp.json()
-            answer = output.get("answer", "")
+
+            answer = output.get("answer")
             sources = output.get("sources", [])
+
+            if not answer:
+                st.warning("Backend returned no answer")
 
         # Answer card
         st.markdown("""
