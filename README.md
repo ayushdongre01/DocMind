@@ -12,6 +12,11 @@ DocMind is a local retrieval-augmented generation (RAG) app for asking questions
 - Send questions through an Inngest-based workflow and generate answers with the OpenAI-compatible client configured for Azure GitHub Models.
 - Show sources for retrieved context in the UI.
 
+## 🌐 Live Demo
+
+👉 Try the app here:  
+🔗 [https://doc-mind.streamlit.app/](https://doc-mind.streamlit.app/)
+
 ## Architecture
 
 1. The Streamlit app accepts a PDF upload.
