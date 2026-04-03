@@ -427,14 +427,15 @@ def save_uploaded_pdf(file) -> Path:
     return file_path
 
 
-async def send_rag_ingest_event(pdf_path: Path) -> None:
+async def send_rag_ingest_event(file) -> None:
     client = get_inngest_client()
+
     await client.send(
         inngest.Event(
             name="rag/ingest_pdf",
             data={
-                "pdf_path": str(pdf_path.resolve()),
-                "source_id": pdf_path.name,
+                "pdf_bytes": file.getvalue(),
+                "source_id": file.name,
             },
         )
     )
