@@ -563,7 +563,10 @@ with col_left:
     if uploaded is not None:
         with st.spinner("Ingesting document…"):
             path = save_uploaded_pdf(uploaded)
-            run_async(send_rag_ingest_event(uploaded))
+            requests.post(
+                "https://docmind-production-67a9.up.railway.app/ingest",
+                files={"file": uploaded.getvalue()}
+            )
             time.sleep(6)
 
         st.markdown(f"""

@@ -24,6 +24,29 @@ class QueryRequest(BaseModel):
     question: str
     top_k: int = 5
 
+from fastapi import UploadFile, File
+
+@app.post("/ingest")
+async def ingest_pdf(file: UploadFile = File(...)):
+
+    contents = await file.read()
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp.write(contents)
+        tmp_path = tmp.name
+
+    chunks = load_and_chunk_pdf(tmp_path)
+
+    vecs = embed_texts(chunks)
+
+    ids = [str(uuid.uuid4()) for _ in chunks]
+
+    payloads = [{"source": file.filename, "text": c} for c in chunks]
+
+    QdrantStorage().upsert(ids, vecs, payloads)
+
+    return {"ingested": len(chunks)}
+
 @app.post("/query")
 async def query(req: QueryRequest):
 
