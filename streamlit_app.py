@@ -614,7 +614,9 @@ with col_right:
     # ── Answer section ────────────────────────────────────────────────────────
     if submitted and question.strip():
         with st.spinner("Generating answer…"):
-            event_id = asyncio.run(send_rag_query_event(question.strip(), int(top_k)))
+            event_id = asyncio.get_event_loop().run_until_complete(
+                            send_rag_query_event(question.strip(), int(top_k))
+                        )
             output = wait_for_run_output(event_id)
             answer = output.get("answer", "")
             sources = output.get("sources", [])
