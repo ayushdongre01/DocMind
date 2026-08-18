@@ -11,4 +11,3 @@ wheels/
 .env
 uploads/
 qdrant_storage/
-models/

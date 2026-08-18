@@ -1,5 +1,6 @@
 import logging
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import inngest
 import inngest.fast_api
 from dotenv import load_dotenv
@@ -20,6 +21,14 @@ load_dotenv()
 from pydantic import BaseModel
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.getenv("STREAMLIT_URL", "https://your-app-name.streamlit.app")],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class QueryRequest(BaseModel):
     question: str
     top_k: int = 5

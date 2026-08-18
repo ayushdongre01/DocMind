@@ -13,6 +13,8 @@ load_dotenv()
 if not os.getenv("INNGEST_API_BASE"):
     raise RuntimeError("INNGEST_API_BASE not set")
 
+BACKEND_URL = os.getenv("BACKEND_URL", "https://docmind-production-67a9.up.railway.app")
+
 if "pdf_ingested" not in st.session_state:
     st.session_state.pdf_ingested = False
 
@@ -574,7 +576,7 @@ with col_left:
 
             with st.spinner("Ingesting document…"):
                 requests.post(
-                    "https://docmind-production-67a9.up.railway.app/ingest",
+                    f"{BACKEND_URL}/ingest",
                     files={"file": (uploaded.name, uploaded.getvalue(), "application/pdf")}
                 )
 
@@ -616,7 +618,7 @@ with col_right:
     if submitted and question.strip():
         with st.spinner("Generating answer…"):
             resp = requests.post(
-                "https://docmind-production-67a9.up.railway.app/query",
+                f"{BACKEND_URL}/query",
                 json={
                     "question": question.strip(),
                     "top_k": int(top_k),
