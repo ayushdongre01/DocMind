@@ -5,7 +5,7 @@ uvicorn
 python-multipart
 python-dotenv
 
-inngest
+inngest==0.5.19
 
 pypdf
 
