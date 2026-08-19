@@ -107,7 +107,7 @@ async def query(req: QueryRequest):
     )
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="llama-3.1-8b-instant",
         messages=[
             {"role": "system", "content": "You answer questions using only the provided context."},
             {"role": "user", "content": user_content}
@@ -125,10 +125,10 @@ async def query(req: QueryRequest):
     }
 
 
-# ✅ GitHub Models Client (IMPORTANT)
+# ✅ Groq Client (OpenAI-compatible, free tier) — GitHub Models retired July 30, 2026
 client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    base_url="https://models.inference.ai.azure.com",
+    api_key=os.getenv("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1",
     timeout=30  # 🔥 prevents hanging
 )
 
@@ -251,7 +251,7 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
     # =========================
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="llama-3.1-8b-instant",
             messages=[
                 {"role": "system", "content": "You answer questions using only the provided context."},
                 {"role": "user", "content": user_content}
