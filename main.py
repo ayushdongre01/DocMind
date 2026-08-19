@@ -107,7 +107,7 @@ async def query(req: QueryRequest):
     )
 
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-20b",
         messages=[
             {"role": "system", "content": "You answer questions using only the provided context."},
             {"role": "user", "content": user_content}
@@ -251,7 +251,7 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
     # =========================
     try:
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             messages=[
                 {"role": "system", "content": "You answer questions using only the provided context."},
                 {"role": "user", "content": user_content}

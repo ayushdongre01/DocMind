@@ -1,3 +1,8 @@
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
 from rank_bm25 import BM25Okapi
@@ -5,7 +10,7 @@ from rank_bm25 import BM25Okapi
 # 🔥 IMPORTANT: update dimension
 EMBED_DIM = 384
 
-CHUNK_SIZE = 700      # words per chunk (was llama-index's char-based splitter)
+CHUNK_SIZE = 700      # words per chunk
 CHUNK_OVERLAP = 100   # words of overlap between chunks
 
 bm25_index = None
