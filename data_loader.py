@@ -10,14 +10,20 @@ splitter = SentenceSplitter(chunk_size=700, chunk_overlap=100)
 bm25_index = None
 chunk_corpus = []
 
-# ✅ Local embedding model (FREE) — loaded lazily, not at import time
+# ✅ Embedding model, downloaded from Hugging Face Hub — loaded lazily, not at import time
 model = None
 
 def get_model():
     global model
     if model is None:
-        model = SentenceTransformer("./models/all-MiniLM-L6-v2")
+        model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
     return model
+
+
+def preload_model():
+    """Call this at FastAPI startup so the ~90MB download happens once at
+    container boot, not mid-request on the first /ingest or /query call."""
+    get_model()
 
 
 def build_bm25_index(chunks: list[str]):
