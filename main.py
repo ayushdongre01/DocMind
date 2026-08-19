@@ -13,7 +13,7 @@ import tempfile
 from openai import OpenAI
 from io import BytesIO
 from data_loader import load_and_chunk_pdf, embed_texts, preload_model
-from vector_db import QdrantStorage
+from vector_db import get_storage
 from custom_types import RAGSearchResult, RAGUpsertResult, RAGChunkAndSrc
 
 import data_loader
@@ -59,7 +59,7 @@ async def ingest_pdf(file: UploadFile = File(...)):
 
     payloads = [{"source": file.filename, "text": c} for c in chunks]
 
-    QdrantStorage().upsert(ids, vecs, payloads)
+    get_storage().upsert(ids, vecs, payloads)
 
     return {"ingested": len(chunks)}
 
@@ -71,7 +71,7 @@ async def query(req: QueryRequest):
 
     # Dense search
     query_vec = embed_texts([question])[0]
-    store = QdrantStorage()
+    store = get_storage()
     dense_results = store.search(query_vec, top_k * 5)
 
     dense_contexts = []
@@ -186,7 +186,7 @@ async def rag_ingest_pdf(ctx: inngest.Context):
             for i in range(len(chunks))
         ]
 
-        QdrantStorage().upsert(ids, vecs, payloads)
+        get_storage().upsert(ids, vecs, payloads)
         return RAGUpsertResult(ingested=len(chunks))
 
     chunks_and_src = await ctx.step.run(
@@ -216,7 +216,7 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
     def _search(question: str, top_k: int = 5) -> RAGSearchResult:
         query_vec = embed_texts([question])[0]
 
-        store = QdrantStorage()
+        store = get_storage()
 
         dense_results = store.search(query_vec, top_k)
 

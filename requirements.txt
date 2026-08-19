@@ -7,8 +7,7 @@ python-dotenv
 
 inngest
 
-llama-index-core
-llama-index-readers-file
+pypdf
 
 qdrant-client
 

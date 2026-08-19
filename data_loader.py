@@ -1,12 +1,13 @@
-from llama_index.readers.file import PDFReader
-from llama_index.core.node_parser import SentenceSplitter
+from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
 from rank_bm25 import BM25Okapi
 
 # 🔥 IMPORTANT: update dimension
 EMBED_DIM = 384
 
-splitter = SentenceSplitter(chunk_size=700, chunk_overlap=100)
+CHUNK_SIZE = 700      # words per chunk (was llama-index's char-based splitter)
+CHUNK_OVERLAP = 100   # words of overlap between chunks
+
 bm25_index = None
 chunk_corpus = []
 
@@ -21,7 +22,7 @@ def get_model():
 
 
 def preload_model():
-    """Call this at FastAPI startup so the ~90MB download happens once at
+    """Call this at FastAPI startup so the download/load happens once at
     container boot, not mid-request on the first /ingest or /query call."""
     get_model()
 
@@ -32,16 +33,32 @@ def build_bm25_index(chunks: list[str]):
     bm25_index = BM25Okapi(tokenized)
     chunk_corpus = chunks
 
-def load_and_chunk_pdf(path: str):
-    docs = PDFReader().load_data(file=path)
-    texts = [d.text for d in docs if getattr(d, "text", None)]
+
+def _split_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
+    words = text.split()
+    if not words:
+        return []
+    chunks = []
+    start = 0
+    while start < len(words):
+        end = start + chunk_size
+        chunks.append(" ".join(words[start:end]))
+        if end >= len(words):
+            break
+        start = end - overlap
+    return chunks
+
+
+def load_and_chunk_pdf(path: str) -> list[str]:
+    reader = PdfReader(path)
+    texts = [page.extract_text() or "" for page in reader.pages]
 
     chunks = []
     for t in texts:
-        chunks.extend(splitter.split_text(t))
+        if t.strip():
+            chunks.extend(_split_text(t))
 
     build_bm25_index(chunks)
-    
     return chunks
 
 
