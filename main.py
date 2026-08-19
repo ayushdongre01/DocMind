@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import inngest
@@ -11,7 +12,7 @@ import base64
 import tempfile
 from openai import OpenAI
 from io import BytesIO
-from data_loader import load_and_chunk_pdf, embed_texts
+from data_loader import load_and_chunk_pdf, embed_texts, preload_model
 from vector_db import QdrantStorage
 from custom_types import RAGSearchResult, RAGUpsertResult, RAGChunkAndSrc
 
@@ -20,7 +21,12 @@ load_dotenv()
 
 from pydantic import BaseModel
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    preload_model()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
