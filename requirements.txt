@@ -1,19 +1,15 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 fastapi
-uvicorn
-python-multipart
+inngest
+llama-index-core
+llama-index-readers-file
 python-dotenv
-
-inngest==0.5.19
-
-pypdf
-
 qdrant-client
-
+uvicorn
+streamlit
+openai
 sentence-transformers==2.7.0
 torch==2.7.1+cpu
-
 rank-bm25
-
-openai
+python-multipart

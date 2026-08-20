@@ -1,7 +1,5 @@
 import logging
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import inngest
 import inngest.fast_api
 from dotenv import load_dotenv
@@ -12,8 +10,8 @@ import base64
 import tempfile
 from openai import OpenAI
 from io import BytesIO
-from data_loader import load_and_chunk_pdf, embed_texts, preload_model
-from vector_db import get_storage
+from data_loader import load_and_chunk_pdf, embed_texts
+from vector_db import QdrantStorage
 from custom_types import RAGSearchResult, RAGUpsertResult, RAGChunkAndSrc
 
 import data_loader
@@ -21,20 +19,7 @@ load_dotenv()
 
 from pydantic import BaseModel
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    preload_model()
-    yield
-
-app = FastAPI(lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[os.getenv("STREAMLIT_URL", "https://your-app-name.streamlit.app")],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+app = FastAPI()
 class QueryRequest(BaseModel):
     question: str
     top_k: int = 5
@@ -59,7 +44,7 @@ async def ingest_pdf(file: UploadFile = File(...)):
 
     payloads = [{"source": file.filename, "text": c} for c in chunks]
 
-    get_storage().upsert(ids, vecs, payloads)
+    QdrantStorage().upsert(ids, vecs, payloads)
 
     return {"ingested": len(chunks)}
 
@@ -71,7 +56,7 @@ async def query(req: QueryRequest):
 
     # Dense search
     query_vec = embed_texts([question])[0]
-    store = get_storage()
+    store = QdrantStorage()
     dense_results = store.search(query_vec, top_k * 5)
 
     dense_contexts = []
@@ -107,7 +92,7 @@ async def query(req: QueryRequest):
     )
 
     response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You answer questions using only the provided context."},
             {"role": "user", "content": user_content}
@@ -125,10 +110,10 @@ async def query(req: QueryRequest):
     }
 
 
-# ✅ Groq Client (OpenAI-compatible, free tier) — GitHub Models retired July 30, 2026
+# ✅ GitHub Models Client (IMPORTANT)
 client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1",
+    api_key=os.getenv("OPENAI_API_KEY"),
+    base_url="https://models.inference.ai.azure.com",
     timeout=30  # 🔥 prevents hanging
 )
 
@@ -186,7 +171,7 @@ async def rag_ingest_pdf(ctx: inngest.Context):
             for i in range(len(chunks))
         ]
 
-        get_storage().upsert(ids, vecs, payloads)
+        QdrantStorage().upsert(ids, vecs, payloads)
         return RAGUpsertResult(ingested=len(chunks))
 
     chunks_and_src = await ctx.step.run(
@@ -216,7 +201,7 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
     def _search(question: str, top_k: int = 5) -> RAGSearchResult:
         query_vec = embed_texts([question])[0]
 
-        store = get_storage()
+        store = QdrantStorage()
 
         dense_results = store.search(query_vec, top_k)
 
@@ -251,7 +236,7 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
     # =========================
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You answer questions using only the provided context."},
                 {"role": "user", "content": user_content}

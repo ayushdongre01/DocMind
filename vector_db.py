@@ -6,7 +6,7 @@ from qdrant_client.models import VectorParams, Distance, PointStruct
 class QdrantStorage:
     def __init__(self, url=None, collection="docs", dim=384):
         url = url or os.getenv("QDRANT_URL", "http://localhost:6333")
-        self.client = QdrantClient(url=url, api_key=os.getenv("QDRANT_API_KEY"), timeout=30)
+        self.client = QdrantClient(url=url,api_key=os.getenv("QDRANT_API_KEY"),timeout=30)
         self.collection = collection
         if not self.client.collection_exists(self.collection):
             self.client.create_collection(
@@ -40,13 +40,3 @@ class QdrantStorage:
                 sources.append(source)
 
         return {"contexts": contexts, "sources": sources}
-
-
-# ✅ Module-level singleton — created once, reused across all requests
-_storage_instance = None
-
-def get_storage() -> QdrantStorage:
-    global _storage_instance
-    if _storage_instance is None:
-        _storage_instance = QdrantStorage()
-    return _storage_instance
