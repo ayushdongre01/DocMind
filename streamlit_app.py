@@ -420,7 +420,7 @@ label,
 def get_inngest_client() -> inngest.Inngest:
     return inngest.Inngest(
         app_id="rag_app",
-        is_production=True
+        is_production=False
     )
 
 
@@ -574,7 +574,7 @@ with col_left:
 
             with st.spinner("Ingesting document…"):
                 requests.post(
-                    "https://docmind-production-67a9.up.railway.app/ingest",
+                    "http://127.0.0.1:8000/ingest",
                     files={"file": (uploaded.name, uploaded.getvalue(), "application/pdf")}
                 )
 
@@ -616,7 +616,7 @@ with col_right:
     if submitted and question.strip():
         with st.spinner("Generating answer…"):
             resp = requests.post(
-                "https://docmind-production-67a9.up.railway.app/query",
+                "http://127.0.0.1:8000/query",
                 json={
                     "question": question.strip(),
                     "top_k": int(top_k),
