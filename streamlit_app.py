@@ -613,7 +613,12 @@ with col_right:
     st.markdown("</div>", unsafe_allow_html=True)  # close card
 
     # ── Answer section ────────────────────────────────────────────────────────
-    if submitted and question.strip():
+    if submitted and question.strip() and uploaded is None:
+        st.markdown("""
+        <div class="pill-info" style="margin-top:.5rem">⚠ &nbsp;Please upload a PDF before asking a question.</div>
+        """, unsafe_allow_html=True)
+
+    elif submitted and question.strip():
         with st.spinner("Generating answer…"):
             resp = requests.post(
                 "http://127.0.0.1:8000/query",
